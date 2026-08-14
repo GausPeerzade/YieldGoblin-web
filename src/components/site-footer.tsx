@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { GoblinMark } from "@/components/brand/goblin-mark";
 
 export function SiteFooter() {
@@ -8,6 +10,12 @@ export function SiteFooter() {
           <GoblinMark className="size-6" />
           <span className="text-sm font-medium">Yield Goblin</span>
           <span className="text-sm text-muted-foreground">on Base</span>
+          <Link
+            href="/docs"
+            className="ml-2 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            How it works
+          </Link>
         </div>
         <div className="max-w-lg space-y-2">
           <p className="text-xs font-medium text-amber-700 dark:text-amber-400">

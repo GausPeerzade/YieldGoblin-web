@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 
 import { GoblinMark } from "@/components/brand/goblin-mark";
 import { ConnectWalletButton } from "@/components/connect-wallet-button";
@@ -21,9 +21,8 @@ const NAV = [
   { href: "/my-vaults", label: "My Vaults" },
   { href: "/rewards", label: "Rewards" },
   { href: "/activity", label: "Activity" },
+  { href: "/docs", label: "How it works" },
 ];
-
-const DOCS_URL = "https://github.com";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -62,15 +61,6 @@ export function SiteHeader() {
               ) : null}
             </Link>
           ))}
-          <a
-            href={DOCS_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Docs
-            <ExternalLink className="size-3.5" />
-          </a>
         </nav>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
@@ -93,13 +83,6 @@ export function SiteHeader() {
                   render={<Link href={item.href}>{item.label}</Link>}
                 />
               ))}
-              <DropdownMenuItem
-                render={
-                  <a href={DOCS_URL} target="_blank" rel="noreferrer">
-                    Docs
-                  </a>
-                }
-              />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
