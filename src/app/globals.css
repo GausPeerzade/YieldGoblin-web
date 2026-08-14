@@ -1,26 +1,173 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Protocol semantics: the YES / NO duality is the core of the product. */
+  --color-yes: var(--yes);
+  --color-yes-foreground: var(--yes-foreground);
+  --color-yes-muted: var(--yes-muted);
+  --color-no: var(--no);
+  --color-no-foreground: var(--no-foreground);
+  --color-no-muted: var(--no-muted);
+  --color-usdc: var(--usdc);
+  --color-usdc-muted: var(--usdc-muted);
+  --color-page: var(--page);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.16 0.005 264);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0.005 264);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.005 264);
+  --primary: oklch(0.555 0.135 158);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.975 0.002 264);
+  --muted-foreground: oklch(0.535 0.012 264);
+  --accent: oklch(0.968 0.018 158);
+  --accent-foreground: oklch(0.42 0.11 158);
+  --destructive: oklch(0.593 0.216 21);
+  --border: oklch(0.925 0.004 264);
+  --input: oklch(0.925 0.004 264);
+  --ring: oklch(0.555 0.135 158);
+  --chart-1: oklch(0.555 0.135 158);
+  --chart-2: oklch(0.593 0.216 21);
+  --chart-3: oklch(0.68 0.11 158);
+  --chart-4: oklch(0.62 0.14 250);
+  --chart-5: oklch(0.72 0.15 70);
+  --radius: 0.625rem;
+
+  --yes: oklch(0.585 0.145 156);
+  --yes-foreground: oklch(0.46 0.12 156);
+  --yes-muted: oklch(0.955 0.03 156);
+  --no: oklch(0.598 0.212 19);
+  --no-foreground: oklch(0.52 0.19 19);
+  --no-muted: oklch(0.958 0.025 19);
+  --usdc: oklch(0.585 0.16 253);
+  --usdc-muted: oklch(0.955 0.03 253);
+  /* Opaque page ground. Must never be transparent — the UA canvas behind a
+     see-through body follows the OS theme and would darken a light design. */
+  --page: oklch(0.982 0.002 264);
+  color-scheme: light;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.155 0.008 264);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.198 0.008 264);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.198 0.008 264);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.635 0.15 158);
+  --primary-foreground: oklch(0.14 0.02 158);
+  --secondary: oklch(0.265 0.008 264);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.255 0.008 264);
+  --muted-foreground: oklch(0.7 0.012 264);
+  --accent: oklch(0.28 0.045 158);
+  --accent-foreground: oklch(0.85 0.11 158);
+  --destructive: oklch(0.672 0.2 21);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.635 0.15 158);
+  --chart-1: oklch(0.68 0.15 158);
+  --chart-2: oklch(0.672 0.2 21);
+  --chart-3: oklch(0.78 0.11 158);
+  --chart-4: oklch(0.68 0.14 250);
+  --chart-5: oklch(0.78 0.15 70);
+
+  --yes: oklch(0.7 0.16 156);
+  --yes-foreground: oklch(0.78 0.14 156);
+  --yes-muted: oklch(0.27 0.045 156);
+  --no: oklch(0.685 0.19 19);
+  --no-foreground: oklch(0.75 0.17 19);
+  --no-muted: oklch(0.27 0.055 19);
+  --usdc: oklch(0.7 0.15 253);
+  --usdc-muted: oklch(0.27 0.06 253);
+  --page: oklch(0.135 0.008 264);
+  color-scheme: dark;
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    @apply bg-page text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* Tabular figures keep tickering yield numbers from shifting layout. */
+  .nums {
+    font-variant-numeric: tabular-nums;
+  }
 }
