@@ -32,6 +32,9 @@ for the stack, layout, and how mock mode works.
   interest. A null rate means "no rate yet" and renders as "—", never 0% or ∞.
 - **Never imply a lock-up.** `deadline` is informational; withdrawals are always
   open, even for a market that never resolves.
+- **Eligibility and permission are different failures.** A market that cannot
+  support a vault and a user who may not create one need different copy; never
+  collapse them into one error.
 - **Verify a vault against the factory registry before rendering it.** The
   implementation is public bytecode; `isVault()` is the only authoritative check.
 - **Temporary contract states are "not yet", not failures.** Partial withdrawals,

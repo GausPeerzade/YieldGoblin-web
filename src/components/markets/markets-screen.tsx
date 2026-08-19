@@ -196,7 +196,10 @@ function sortVaults(vaults: VaultView[], sort: SortKey): VaultView[] {
         : (a: VaultView, b: VaultView) => bestRate(b) - bestRate(a);
 
   return [...vaults].sort(
-    (a, b) => Number(b.hasMetadata) - Number(a.hasMetadata) || within(a, b),
+    (a, b) =>
+      Number(Boolean(b.featured)) - Number(Boolean(a.featured)) ||
+      Number(b.hasMetadata) - Number(a.hasMetadata) ||
+      within(a, b),
   );
 }
 

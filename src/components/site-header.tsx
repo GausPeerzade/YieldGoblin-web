@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, Plus } from "lucide-react";
 
 import { GoblinMark } from "@/components/brand/goblin-mark";
 import { ConnectWalletButton } from "@/components/connect-wallet-button";
@@ -23,6 +23,9 @@ const NAV = [
   { href: "/activity", label: "Activity" },
   { href: "/docs", label: "How it works" },
 ];
+
+/** Kept out of NAV so it renders as an action, not another tab. */
+const CREATE_HREF = "/create";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -64,6 +67,17 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <Link
+            href={CREATE_HREF}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "hidden lg:inline-flex",
+              pathname.startsWith(CREATE_HREF) && "bg-accent text-accent-foreground",
+            )}
+          >
+            <Plus className="size-4" />
+            Add market
+          </Link>
           <ThemeToggle />
           <ConnectWalletButton />
           <DropdownMenu>
@@ -83,6 +97,9 @@ export function SiteHeader() {
                   render={<Link href={item.href}>{item.label}</Link>}
                 />
               ))}
+              <DropdownMenuItem
+                render={<Link href={CREATE_HREF}>Add market</Link>}
+              />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

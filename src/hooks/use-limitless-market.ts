@@ -2,8 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { deploymentByVault } from "@/lib/deployments";
-import { useTargetChainId } from "@/hooks/use-target-chain";
 import type { VaultView } from "@/lib/protocol";
 
 export type LimitlessOdds = {
@@ -25,20 +23,16 @@ export type LimitlessOdds = {
  * imply anything about the deposit's value.
  */
 export function useLimitlessMarket(vault: VaultView | undefined) {
-  const chainId = useTargetChainId();
-  const deployment = deploymentByVault(chainId, vault?.address);
-  const conditionId = vault?.conditionId ?? deployment?.conditionId;
+  const conditionId = vault?.conditionId;
 
   const { data, isLoading } = useQuery<LimitlessOdds>({
-    queryKey: ["limitless-market", conditionId, deployment?.limitlessSlug],
+    queryKey: ["limitless-market", conditionId],
     enabled: Boolean(conditionId),
     staleTime: 60_000,
     refetchInterval: 120_000,
     retry: 1,
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (conditionId) params.set("conditionId", conditionId);
-      if (deployment?.limitlessSlug) params.set("slug", deployment.limitlessSlug);
+      const params = new URLSearchParams({ conditionId: conditionId! });
       const res = await fetch(`/api/limitless?${params}`);
       if (!res.ok) throw new Error(`limitless ${res.status}`);
       return res.json();

@@ -28,9 +28,31 @@ It runs against **live Base mainnet** out of the box — the factory address is
 built in. Set `NEXT_PUBLIC_BASE_RPC_URL` to a real RPC: the public endpoint
 rate-limits hard and caps `eth_getLogs` at a 10,000-block span.
 
-There is no mock or demo data. Every market, balance and event on screen is read
-from chain; the vault list comes from enumerating the factory registry, so a
-vault appears only once it actually exists.
+There is no mock or demo data. Every market, balance and event on screen is
+read from chain — but through the server-side read API, not per-visitor RPC.
+
+## Read architecture
+
+Public vault state is identical for every visitor, so it is computed once on
+the server and shared:
+
+| Route | Source | Cache |
+| --- | --- | --- |
+| `/api/vaults` | factory enumeration + 2 multicalls + Limitless metadata | 12s TTL, CDN `s-maxage=15` |
+| `/api/vault/[address]/history` | incremental chunked `eth_getLogs`, decoded | 60s TTL, CDN `s-maxage=60` |
+| `/api/activity` | merged per-vault histories | CDN `s-maxage=30` |
+| `/api/limitless` | shared Limitless index | CDN `s-maxage=60` |
+
+A refresh costs three RPC round trips for the whole site, regardless of
+visitor count. The browser talks to the chain directly only for wallet-scoped
+data — balances, allowances, `maxWithdraw` — which must stay fresh and is
+never cached anywhere shared. Writes go wallet → contract as always.
+
+The vault list is discovered from the factory at runtime and titles come from
+the Limitless API keyed by `conditionId`, so a permissionlessly-created vault
+appears with its real title automatically; `deployments.ts` is only a curated
+override. Moderation is `HIDDEN_VAULTS` / `FEATURED_VAULTS` env vars until the
+list justifies a database.
 
 ## Live deployment
 
@@ -107,7 +129,38 @@ data and chain data flow through identical derivations.
 - **Vault addresses are verified against the factory registry** before anything
   is rendered — the implementation is public bytecode, so clones are possible.
 
-## Adding a vault
+## Creating a vault
+
+`/create` takes a Limitless market link and does the rest. The slug resolves
+via `GET /markets/{slug}`, position ids are derived from the CTF, and the
+venue addresses are constants — the visitor never types an address.
+
+`POST /api/resolve-market` runs seven checks before offering the button:
+market exists · settles in USDC (which also rules out NegRisk) · binary ·
+unresolved · no existing vault · has a close date · **the factory accepts it
+in a simulation**. The last one is the real gate; the others exist to give a
+specific reason when it fails.
+
+### Permissionless creation
+
+`createVault(bytes32,uint256,uint256,uint64,address,address)` — selector
+`0x46ec668e` — is open to anyone. Verified by simulation: two unrelated
+addresses and the deployer all succeed on the same market.
+
+The parameters a caller could otherwise abuse are constrained by the factory:
+the adapter must satisfy `isTrustedAdapter`, the exchange `isTrustedExchange`,
+and the fee comes from `defaultPerfFeeBps()` rather than being passed in.
+
+**`deadline` is the exception.** It is caller-supplied and no contract logic
+reads it, so the UI never trusts it — `deadline` is sourced from the venue's
+`expirationTimestamp`, and a `deadlineDisputed` flag marks vaults where the
+creator's on-chain value disagrees. The first live vault already disagrees by
+twelve hours, so this is not hypothetical.
+
+Likewise `isVault()` now means "created by this factory with validated
+parameters", **not** "reviewed by anyone" — the copy reflects that.
+
+## Registry overrides
 
 1. Append a `Deployment` entry to `src/lib/deployments.ts` — vault address,
    deploy block, `conditionId`, title, ticker, Limitless slug, and the vault's

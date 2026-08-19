@@ -108,7 +108,9 @@ export function VaultScreen({ address }: { address: string }) {
   }
 
   // The implementation is public bytecode, so anyone can deploy a byte-identical
-  // clone. The factory registry is the only authoritative answer (guide §2).
+  // clone. The factory registry is the only authoritative answer to "is this
+  // ours" — though since creation went permissionless it means "created with
+  // validated parameters", not "reviewed by anyone".
   if (!verified) {
     return (
       <Shell>
@@ -118,6 +120,11 @@ export function VaultScreen({ address }: { address: string }) {
           <p className="max-w-md text-sm text-muted-foreground">
             The contract at this address was not created by the Yield Goblin
             factory. It may be an imitation — do not deposit into it.
+          </p>
+          <p className="max-w-md text-xs text-muted-foreground">
+            Vaults that <em>are</em> in the registry were created with validated
+            parameters, but anyone can create one — being listed is not an
+            endorsement of the underlying market.
           </p>
           <ButtonLink variant="outline" href="/">
             Back to markets

@@ -42,6 +42,13 @@ export const conditionalTokensAbi = [
   },
   {
     type: "function",
+    name: "getOutcomeSlotCount",
+    inputs: [{ name: "conditionId", type: "bytes32" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "payoutDenominator",
     inputs: [{ name: "conditionId", type: "bytes32" }],
     outputs: [{ type: "uint256" }],

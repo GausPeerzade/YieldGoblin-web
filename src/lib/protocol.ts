@@ -37,8 +37,14 @@ export type VaultView = {
   yesId: bigint;
   noId: bigint;
   adapter: Address;
-  /** Market close. Informational only — nothing locks (guide §4, §10). */
+  /**
+   * Market close, preferring the venue's own expiry. Informational only —
+   * nothing locks, and the vault's `deadline()` is caller-supplied and
+   * unverified, so it is never trusted over Limitless.
+   */
   deadline: bigint;
+  /** The creator's on-chain `deadline()` disagrees with the venue's expiry. */
+  deadlineDisputed?: boolean;
   perfFeeBps: number;
   market: MarketMeta;
   /**
@@ -82,6 +88,9 @@ export type VaultView = {
 
   /** True when this vault was deployed with non-production constants. */
   testDeployment?: boolean;
+
+  /** Pinned to the top of the market list by the operator. */
+  featured?: boolean;
 };
 
 /** Per-user state for a vault. Separate so it can refresh independently. */

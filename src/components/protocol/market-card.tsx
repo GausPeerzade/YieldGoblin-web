@@ -40,6 +40,14 @@ export function MarketCard({
           <span className="flex items-center gap-1.5">
             <CalendarClock className="size-3.5" />
             Closes {formatDeadline(vault.deadline)}
+            {vault.deadlineDisputed ? (
+              <span
+                title="The vault's creator recorded a different close date on-chain. That field isn't verified by the contract, so the date shown here comes from Limitless."
+                className="ml-0.5 cursor-help text-muted-foreground/70 underline decoration-dotted underline-offset-2"
+              >
+                per Limitless
+              </span>
+            ) : null}
           </span>
           <LimitlessBadge vault={vault} />
         </div>

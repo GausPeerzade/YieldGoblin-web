@@ -1,35 +1,17 @@
 import { NextResponse } from "next/server";
 
+import { getMarketIndex } from "@/server/limitless";
+
 /**
- * Proxy for Limitless market metadata.
+ * Market odds lookup, backed by the shared server-side Limitless index.
  *
- * Runs server-side for two reasons: the upstream API returns 403 without a
- * User-Agent, and it sends no CORS headers. Odds are market context only — the
- * vault's yield and principal do not depend on them.
+ * Server-side because upstream 403s without a User-Agent and sends no CORS
+ * headers. Odds are market context only — the vault's yield and principal do
+ * not depend on them.
  */
+export const dynamic = "force-dynamic";
 
-const UPSTREAM = "https://api.limitless.exchange/markets/active";
-const PAGE_SIZE = 25;
-const MAX_PAGES = 8;
-
-type LimitlessMarket = {
-  conditionId?: string;
-  slug?: string;
-  title?: string;
-  prices?: number[];
-  volumeFormatted?: string;
-  expirationTimestamp?: number;
-};
-
-function unwrap(payload: unknown): LimitlessMarket[] {
-  if (Array.isArray(payload)) return payload as LimitlessMarket[];
-  if (payload && typeof payload === "object") {
-    const data = (payload as { data?: unknown; markets?: unknown }).data ??
-      (payload as { markets?: unknown }).markets;
-    if (Array.isArray(data)) return data as LimitlessMarket[];
-  }
-  return [];
-}
+const CACHE = "public, s-maxage=60, stale-while-revalidate=120";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -44,54 +26,28 @@ export async function GET(request: Request) {
   }
 
   try {
-    // The vault's market may not be on the first page, so walk a few.
-    for (let page = 1; page <= MAX_PAGES; page++) {
-      const res = await fetch(`${UPSTREAM}?page=${page}&limit=${PAGE_SIZE}`, {
-        headers: {
-          accept: "application/json",
-          // A missing User-Agent gets a 403 from upstream.
-          "User-Agent": "YieldGoblin/1.0 (+https://yieldgoblin.xyz)",
-        },
-        next: { revalidate: 60 },
-      });
+    const index = await getMarketIndex();
+    const match = conditionId
+      ? index.get(conditionId)
+      : [...index.values()].find((m) => m.slug?.toLowerCase() === slug);
 
-      if (!res.ok) {
-        return NextResponse.json(
-          { error: `upstream ${res.status}` },
-          { status: 502 },
-        );
-      }
-
-      const markets = unwrap(await res.json());
-      if (markets.length === 0) break;
-
-      const match = markets.find(
-        (m) =>
-          (conditionId && m.conditionId?.toLowerCase() === conditionId) ||
-          (slug && m.slug?.toLowerCase() === slug),
-      );
-
-      if (match) {
-        return NextResponse.json(
-          {
-            found: true,
-            title: match.title ?? null,
-            slug: match.slug ?? null,
-            // prices is [yes, no], each 0–1.
-            yesPrice: match.prices?.[0] ?? null,
-            noPrice: match.prices?.[1] ?? null,
-            volume: match.volumeFormatted ?? null,
-            expirationTimestamp: match.expirationTimestamp ?? null,
-          },
-          { headers: { "Cache-Control": "public, max-age=60" } },
-        );
-      }
-
-      if (markets.length < PAGE_SIZE) break;
+    if (!match) {
+      // Not being listed is normal — markets drop off `active` once closed.
+      return NextResponse.json({ found: false }, { headers: { "Cache-Control": CACHE } });
     }
 
-    // Not being listed is normal — a market drops off `active` once it closes.
-    return NextResponse.json({ found: false });
+    return NextResponse.json(
+      {
+        found: true,
+        title: match.title,
+        slug: match.slug,
+        yesPrice: match.yesPrice,
+        noPrice: match.noPrice,
+        volume: match.volume,
+        expirationTimestamp: match.expirationTimestamp,
+      },
+      { headers: { "Cache-Control": CACHE } },
+    );
   } catch {
     return NextResponse.json({ error: "upstream unreachable" }, { status: 502 });
   }

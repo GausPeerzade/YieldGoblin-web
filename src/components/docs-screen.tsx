@@ -99,7 +99,7 @@ export function DocsScreen() {
           />
           <Faq
             q="What do I need to get started?"
-            a="A wallet on Base, and YES or NO shares from a Limitless market that has a vault. You will approve the vault once, then deposit. Given this is beta, use a wallet you keep separate from your main funds."
+            a="A wallet on Base, and YES or NO shares from a Limitless market that has a vault. You will approve the vault once, then deposit. If your market has no vault yet, you can create one yourself from the Add market page — anyone can, and it costs only gas. Given this is beta, use a wallet you keep separate from your main funds."
           />
         </div>
       </section>

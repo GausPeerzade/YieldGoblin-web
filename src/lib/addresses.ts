@@ -21,14 +21,35 @@ type ChainAddresses = {
   vaultFactory: Address;
 };
 
+/**
+ * Defaults for `createVault`, all verified against the audited factory.
+ *
+ * The exchange is only a fallback — Limitless reports the real one per market
+ * at `venue.exchange`, and there are several CTFExchange deployments, so
+ * always prefer the market's own. The fee is *not* here: the factory reads it
+ * from `defaultPerfFeeBps()`, so there is nothing to pass and nothing to
+ * hardcode.
+ *
+ * Checksums are canonical EIP-55 — the values printed in the deployment notes
+ * have invalid checksums and viem rejects them outright.
+ */
+export const CREATE_PARAMS = {
+  /** AaveV3Adapter implementation; must satisfy `factory.isTrustedAdapter`. */
+  adapterImplementation: (env(process.env.NEXT_PUBLIC_ADAPTER_IMPL) ??
+    "0x2e0a1914F72350E0344d81dc9176034E8104C083") as Address,
+  /** Limitless CTFExchange v3 — used only when the market doesn't name one. */
+  fallbackExchange: "0x05c748E2f4DcDe0ec9Fa8DDc40DE6b867f923fa5" as Address,
+} as const;
+
 const BASE_MAINNET: ChainAddresses = {
   ctf: "0xC9c98965297Bc527861c898329Ee280632B76e18",
   usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   aavePool: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
   aUsdc: "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
-  // Live VaultFactory on Base mainnet. Override only to point at a redeploy.
+  // Audited VaultFactory on Base mainnet, permissionless creation.
+  // Deployed at block 50,179,016.
   vaultFactory: (env(process.env.NEXT_PUBLIC_VAULT_FACTORY_BASE) ??
-    "0x4200745262A978E09a82692931EcD96dA6d66a89") as Address,
+    "0xC908876b5BCd908E01d32478C1b5dea48F8B22e4") as Address,
 };
 
 const BASE_SEPOLIA: ChainAddresses = {

@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function ActivityScreen() {
   const chainId = useTargetChainId();
   const { vaults } = useVaults();
-  const { activity, isLoading } = useAllVaultEvents(vaults);
+  const { activity, isLoading } = useAllVaultEvents();
 
   const questionFor = useMemo(() => {
     const byAddress = new Map(
