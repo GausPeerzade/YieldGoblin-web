@@ -50,7 +50,7 @@ export function DocsScreen() {
             n={2}
             icon={<Wallet className="size-4" />}
             title="Deposit them"
-            body="Put those shares into the vault for that market. You can deposit one side or both."
+            body="Put those shares into the vault for that market. No vault yet? Add one yourself — it takes a link."
           />
           <Step
             n={3}
@@ -62,7 +62,7 @@ export function DocsScreen() {
       </section>
 
       <section className="mt-12">
-        <h2 className="text-xl font-semibold tracking-tight">Common questions</h2>
+        <h2 className="text-xl font-semibold tracking-tight">Using a vault</h2>
         <div className="mt-5 divide-y overflow-hidden rounded-xl border bg-card">
           <Faq
             q="Does depositing change my bet?"
@@ -87,7 +87,7 @@ export function DocsScreen() {
           />
           <Faq
             q="What does it cost?"
-            a="A 5% performance fee on the yield earned — nothing else. There is no fee to deposit and no fee to withdraw. If the vault earns nothing, you pay nothing."
+            a="A 5% performance fee on the yield earned — nothing else. There is no fee to deposit and no fee to withdraw, and if the vault earns nothing you pay nothing. Whoever created the vault doesn't set this: the fee comes from the protocol, so it's the same everywhere."
           />
           <Faq
             q="Who holds my shares?"
@@ -99,7 +99,38 @@ export function DocsScreen() {
           />
           <Faq
             q="What do I need to get started?"
-            a="A wallet on Base, and YES or NO shares from a Limitless market that has a vault. You will approve the vault once, then deposit. If your market has no vault yet, you can create one yourself from the Add market page — anyone can, and it costs only gas. Given this is beta, use a wallet you keep separate from your main funds."
+            a="A wallet on Base, and YES or NO shares from a Limitless market. You will approve the vault once, then deposit. If your market has no vault yet, see the section below — you can add it yourself. Given this is beta, use a wallet you keep separate from your main funds."
+          />
+        </div>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="text-xl font-semibold tracking-tight">Adding a market</h2>
+        <p className="mt-2 max-w-xl text-muted-foreground">
+          Vaults aren&apos;t curated. If the market you want isn&apos;t here,
+          you can add it — no permission, no waiting.
+        </p>
+        <div className="mt-5 divide-y overflow-hidden rounded-xl border bg-card">
+          <Faq
+            q="The market I want isn't listed. Can I add it?"
+            defaultOpen
+            a="Yes, and you don't need anyone's approval. Open Add market, paste the link to the market on Limitless, and we'll check it can support a vault before offering to create one. Creating costs only the gas for the transaction — there's no fee, and you don't have to deposit afterwards."
+          />
+          <Faq
+            q="What do I need to know before I create one?"
+            a="Very little — you paste a link and everything else is worked out for you. You never enter an address, a token id, or a fee. Nine checks run first, covering things like whether the market is a two-outcome market, whether it settles in USDC, whether it has already resolved, and whether one already has a vault. If any fail you'll see exactly which and why."
+          />
+          <Faq
+            q="Who decides which markets appear here?"
+            a="Nobody does. Anyone can create a vault for any market that passes the checks, so a vault showing up in the list is not a recommendation. The contract behind every vault is identical and its settings are verified on-chain when it's created — but the market it points at is whichever one the creator chose. Judge that market the same way you would before betting on it."
+          />
+          <Faq
+            q="Is it safe to use a vault someone else created?"
+            a="The vault itself runs the same code as every other, deployed by the factory with its settings checked as it's created. Whoever creates a vault can't change how it behaves, can't take a different fee, and can't point it at a different token. The one thing they choose is which market — so the risk you're taking is the market's, not theirs."
+          />
+          <Faq
+            q="Why does a close date sometimes say 'per Limitless'?"
+            a="Each vault stores its own close date, recorded by whoever created it, and nothing in the contract checks that it's right. We show Limitless's date instead, since Limitless is what actually decides when its market closes. That note appears on the rare vault where the two disagree. Either way it changes nothing for you: there is no lock-up, and withdrawals stay open regardless of the date."
           />
         </div>
       </section>
@@ -145,9 +176,11 @@ export function DocsScreen() {
           Browse markets
           <ArrowRight className="size-4" />
         </ButtonLink>
-        <p className="text-sm text-muted-foreground">
-          Still unsure? Open a vault and look around — nothing happens until you
-          connect a wallet.
+        <ButtonLink variant="outline" href="/create">
+          Add a market
+        </ButtonLink>
+        <p className="w-full text-sm text-muted-foreground sm:w-auto">
+          Nothing happens until you connect a wallet — have a look around first.
         </p>
       </div>
     </div>
