@@ -113,18 +113,51 @@ type RawMarket = {
   tokens?: { yes?: string; no?: string };
 };
 
+const LIMITLESS_HEADERS = {
+  accept: "application/json",
+  // A missing User-Agent gets a 403 from upstream.
+  "User-Agent": "YieldGoblin/1.0 (+https://yieldgoblin.vercel.app)",
+} as const;
+
+async function fetchOne(path: string): Promise<RawMarket | null> {
+  try {
+    const res = await fetch(`https://api.limitless.exchange/${path}`, {
+      headers: LIMITLESS_HEADERS,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    const market = Array.isArray(body) ? body[0] : (body?.data ?? body);
+    return market?.conditionId ? (market as RawMarket) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Limitless URLs carry one of two kinds of slug and they need different
+ * endpoints.
+ *
+ * A *market* slug names one instance and ends in its epoch
+ * (`btc-up-or-down-daily-1787068800`). A *stable* slug is the permanent link
+ * to a recurring series (`btc-daily-price`) and resolves to whichever
+ * instance is currently live — `/markets/{slug}` returns 400 for those, which
+ * is exactly what a user pasting the share link from the site would hit.
+ *
+ * The trailing-epoch shape tells the two apart, so the likely endpoint is
+ * tried first; the other is a fallback, since neither format is guaranteed.
+ */
 async function fetchMarket(slug: string): Promise<RawMarket | null> {
-  const res = await fetch(`https://api.limitless.exchange/markets/${slug}`, {
-    headers: {
-      accept: "application/json",
-      "User-Agent": "YieldGoblin/1.0 (+https://yieldgoblin.vercel.app)",
-    },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  const body = await res.json();
-  const market = Array.isArray(body) ? body[0] : (body?.data ?? body);
-  return market?.conditionId ? (market as RawMarket) : null;
+  const looksLikeInstance = /-\d{8,}$/.test(slug);
+  const order = looksLikeInstance
+    ? [`markets/${slug}`, `markets/stable/${slug}`]
+    : [`markets/stable/${slug}`, `markets/${slug}`];
+
+  for (const path of order) {
+    const market = await fetchOne(path);
+    if (market) return market;
+  }
+  return null;
 }
 
 /** Limitless returns expiry in ms on the detail route, seconds on the list. */
@@ -269,8 +302,13 @@ export async function resolveMarket(
   push("ids-match", "Outcome tokens verify against the venue", idsMatch,
     idsMatch ? undefined : "The venue reports different token ids than the chain derives for this market.");
 
+  // A stable slug resolves to whichever instance is live right now, and the
+  // vault is created for *that* instance's condition — so report the resolved
+  // slug, not the rolling one the user pasted.
+  const resolvedSlug = raw.slug ?? slug;
+
   const market: ResolvedMarket = {
-    slug,
+    slug: resolvedSlug,
     title: raw.title ?? slug,
     ticker: raw.priceOracleMetadata?.ticker ?? null,
     conditionId,
@@ -280,7 +318,7 @@ export async function resolveMarket(
     yesPrice: raw.prices?.[0] ?? null,
     noPrice: raw.prices?.[1] ?? null,
     volume: raw.volumeFormatted ?? null,
-    marketUrl: `https://limitless.exchange/markets/${slug}`,
+    marketUrl: `https://limitless.exchange/markets/${resolvedSlug}`,
   };
 
   const preflightOk = checks.every((c) => c.ok);
