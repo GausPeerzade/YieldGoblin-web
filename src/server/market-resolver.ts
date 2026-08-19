@@ -52,9 +52,23 @@ export type ResolvedMarket = {
   marketUrl: string;
 };
 
+/** One selectable outcome inside a multi-outcome group. */
+export type GroupOption = {
+  title: string;
+  slug: string;
+  /** Unix seconds. */
+  deadline: number;
+};
+
 export type ResolveResult = {
   ok: boolean;
   market?: ResolvedMarket;
+  /**
+   * Set when the link points at a market *group* rather than one market.
+   * `options` is present when the group's outcomes are independent binary
+   * markets that can each have their own vault.
+   */
+  group?: { title: string; outcomes: number; negRisk: boolean; options: GroupOption[] };
   /** Present when a vault already exists — the caller should link to it. */
   existingVault?: Address;
   checks: Check[];
@@ -111,6 +125,12 @@ type RawMarket = {
   venue?: { exchange?: string; adapter?: string | null };
   /** Position ids as the venue reports them, used only as a cross-check. */
   tokens?: { yes?: string; no?: string };
+  /** "single" or "group" — a group has no conditionId of its own. */
+  marketType?: string;
+  /** Present on NegRisk groups, whose outcomes share linked NO books. */
+  negRiskMarketId?: string | null;
+  /** A group's constituent outcomes, each its own market. */
+  markets?: RawMarket[];
 };
 
 const LIMITLESS_HEADERS = {
@@ -128,7 +148,14 @@ async function fetchOne(path: string): Promise<RawMarket | null> {
     if (!res.ok) return null;
     const body = await res.json();
     const market = Array.isArray(body) ? body[0] : (body?.data ?? body);
-    return market?.conditionId ? (market as RawMarket) : null;
+    // A group has no conditionId of its own, so presence of either a condition
+    // or nested markets is what makes this a usable payload. Returning groups
+    // rather than discarding them is what lets the caller explain the case
+    // instead of claiming the market doesn't exist.
+    if (!market) return null;
+    return market.conditionId || Array.isArray(market.markets)
+      ? (market as RawMarket)
+      : null;
   } catch {
     return null;
   }
@@ -193,6 +220,43 @@ export async function resolveMarket(
   push("market-found", "Market exists on Limitless", Boolean(raw),
     raw ? undefined : "Limitless has no market with that link. Check the URL and try again.");
   if (!raw) return { ok: false, checks };
+
+  /**
+   * A group link names a set of outcomes, not one market, so there is nothing
+   * to build a vault on directly.
+   *
+   * NegRisk groups are out entirely: their NO books are linked across
+   * outcomes, so a YES/NO pair is not the self-contained dollar the vault
+   * depends on. A plain group is just independent binary markets bundled for
+   * display — each of those *can* have a vault, so offer them as choices
+   * rather than a dead end.
+   */
+  if (!raw.conditionId && Array.isArray(raw.markets)) {
+    const negRisk =
+      Boolean(raw.negRiskMarketId) ||
+      raw.markets.some((m) => Boolean(m.negRiskRequestId));
+
+    const options: GroupOption[] = negRisk
+      ? []
+      : raw.markets
+          .filter((m) => m.slug && m.conditionId && !m.negRiskRequestId)
+          .map((m) => ({
+            title: m.title ?? m.slug!,
+            slug: m.slug!,
+            deadline: toUnixSeconds(m.expirationTimestamp ?? raw.expirationTimestamp),
+          }));
+
+    return {
+      ok: false,
+      checks,
+      group: {
+        title: raw.title ?? slug,
+        outcomes: raw.markets.length,
+        negRisk,
+        options,
+      },
+    };
+  }
 
   const conditionId = raw.conditionId as Hex;
   const { ctf, usdc, vaultFactory } = addressesFor(chainId);

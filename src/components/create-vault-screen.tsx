@@ -36,9 +36,11 @@ type ResolvedMarket = {
   volume: string | null;
   marketUrl: string;
 };
+type GroupOption = { title: string; slug: string; deadline: number };
 type ResolveResult = {
   ok: boolean;
   market?: ResolvedMarket;
+  group?: { title: string; outcomes: number; negRisk: boolean; options: GroupOption[] };
   existingVault?: string;
   checks: Check[];
   deployArgs?: DeployArgs;
@@ -63,15 +65,17 @@ export function CreateVaultScreen() {
   const [result, setResult] = useState<ResolveResult | null>(null);
   const [checking, setChecking] = useState(false);
 
-  const resolve = useCallback(async () => {
-    if (!url.trim()) return;
+  const resolve = useCallback(async (override?: string) => {
+    const target = (override ?? url).trim();
+    if (!target) return;
+    if (override) setUrl(override);
     setChecking(true);
     setResult(null);
     try {
       const res = await fetch("/api/resolve-market", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: target }),
       });
       setResult((await res.json()) as ResolveResult);
     } catch {
@@ -124,7 +128,7 @@ export function CreateVaultScreen() {
           />
           <Button
             size="lg"
-            onClick={resolve}
+            onClick={() => resolve()}
             disabled={checking || !url.trim()}
             className="sm:w-36"
           >
@@ -149,6 +153,10 @@ export function CreateVaultScreen() {
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
           <p className="text-sm">{result.error}</p>
         </Card>
+      ) : null}
+
+      {result?.group ? (
+        <GroupPanel group={result.group} onPick={(slug) => resolve(slug)} />
       ) : null}
 
       {result?.market ? (
@@ -189,6 +197,71 @@ export function CreateVaultScreen() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * A group link resolves to a set of outcomes, not a market. NegRisk groups
+ * can't be supported at all; a plain group's outcomes are ordinary binary
+ * markets, so they become a picker rather than an error.
+ */
+function GroupPanel({
+  group,
+  onPick,
+}: {
+  group: { title: string; outcomes: number; negRisk: boolean; options: GroupOption[] };
+  onPick: (slug: string) => void;
+}) {
+  if (group.negRisk || group.options.length === 0) {
+    return (
+      <Card className="mt-4 gap-3 p-5">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <div>
+            <p className="text-sm font-medium">
+              &ldquo;{group.title}&rdquo; is a multi-outcome market
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              It has {group.outcomes} outcomes that share linked order books, so
+              a YES and a NO from it don&apos;t combine into a single dollar the
+              way a two-outcome market&apos;s do. Vaults rely on that, so this
+              kind of market can&apos;t have one. Try a market with just YES and
+              NO.
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="mt-4 gap-4 p-5">
+      <div>
+        <p className="text-sm font-medium">
+          &ldquo;{group.title}&rdquo; bundles {group.outcomes} separate markets
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Each is its own YES/NO market and can have its own vault. Pick which
+          one you want.
+        </p>
+      </div>
+      <div className="grid gap-2">
+        {group.options.map((o) => (
+          <button
+            key={o.slug}
+            type="button"
+            onClick={() => onPick(`https://limitless.exchange/markets/${o.slug}`)}
+            className="flex items-center justify-between gap-4 rounded-lg border bg-background px-4 py-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <span className="text-sm font-medium">{o.title}</span>
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              {o.deadline > 0 ? `Closes ${formatDeadline(BigInt(o.deadline))}` : null}
+              <ArrowRight className="size-4" />
+            </span>
+          </button>
+        ))}
+      </div>
+    </Card>
   );
 }
 
